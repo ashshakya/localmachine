@@ -1,0 +1,215 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Mocker · Command Center</title>
+  <link rel="stylesheet" href="{% static 'api_mocker/mocker.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/documentation_theme.css' %}">
+  <link rel="stylesheet" href="{% static 'api_mocker/collections.css' %}?v=20260725-6">
+  <link rel="stylesheet" href="{% static 'api_mocker/utilities.css' %}?v=20260725-7">
+  <link rel="stylesheet" href="{% static 'api_mocker/history.css' %}?v=20260725-2">
+  <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
+</head>
+<body class="mocker-theme">
+  <header class="topbar">
+    <a class="brand" href="{% url 'api_mocker:dashboard' %}"><span>⌁</span>API<em>Mocker</em></a>
+    {% include "shared/tool_navigation.html" with active_tool="api_mocker" %}
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">DEVELOPMENT TOOL</p>
+        <h1>API Mocker</h1>
+        <p>Define fake endpoints with custom responses, headers, status codes, and latency.</p>
+      </div>
+      <code>{{ request.scheme }}://{{ request.get_host }}/&lt;collection&gt;/&lt;path&gt;</code>
+    </section>
+
+    <div class="mocker-workspace">
+      <section class="panel collections-panel" aria-labelledby="collections-heading">
+        <div class="panel-title">
+          <div><p class="eyebrow">WORKSPACES</p><h2 id="collections-heading">Collections</h2></div>
+          <button class="collection-add" id="show-collection-form" type="button" aria-label="Create collection">＋</button>
+        </div>
+        <div class="collection-tools">
+          <label class="search-field">
+            <span class="visually-hidden">Search collections</span>
+            <input id="collection-search" type="search" placeholder="Search collections…">
+          </label>
+          <form id="collection-form" class="collection-form" hidden>
+            <input id="collection-edit-id" type="hidden">
+            <label>Collection name <input id="collection-name" maxlength="120" required placeholder="Payments"></label>
+            <label>Description <textarea id="collection-description" rows="2" maxlength="500" placeholder="Optional notes"></textarea></label>
+            <div><button class="collection-save" type="submit">Save</button><button id="cancel-collection" type="button">Cancel</button></div>
+          </form>
+        </div>
+        <div id="collection-list" class="collection-list"></div>
+        <div id="collection-empty" class="empty" hidden>No collections match your search.</div>
+      </section>
+
+      <div class="mock-builder-layout">
+        <section class="panel form-panel">
+          <div class="panel-title">
+            <div><p class="eyebrow">MOCK DEFINITION</p><h2 id="form-heading">New mock</h2></div>
+            <button class="link-button" id="cancel-edit" type="button" hidden>Cancel edit</button>
+          </div>
+
+          <input type="hidden" id="mock-id">
+          <label>Collection
+            <select id="collection-id" required></select>
+          </label>
+          <div class="row">
+            <label>Method
+              <select id="method">
+                <option>GET</option><option>POST</option><option>PUT</option>
+                <option>PATCH</option><option>DELETE</option><option>OPTIONS</option><option>HEAD</option>
+              </select>
+            </label>
+            <label class="path-field">Path
+              <input id="path" placeholder="/users/123">
+            </label>
+          </div>
+          <p class="hint">Reachable at <code id="path-preview">/default/users/123</code></p>
+
+          <div class="row">
+            <label>Status code <input id="status-code" type="number" min="100" max="599" value="200"></label>
+            <label>Latency (ms) <input id="latency-ms" type="number" min="0" max="30000" value="0"></label>
+          </div>
+
+          <div class="response-field">
+            <div class="field-heading">
+              <label for="response-body">Response body</label>
+              <button id="prettify-response" class="prettify-button" type="button"><span aria-hidden="true">{ }</span> Prettify JSON</button>
+            </div>
+            <textarea id="response-body" rows="8" placeholder='{"message": "hello"}'></textarea>
+          </div>
+          <label>Headers <span>one per line, Key: Value</span>
+            <textarea id="headers" rows="4" placeholder="Content-Type: application/json&#10;X-Powered-By: API Mocker"></textarea>
+          </label>
+          <button class="primary-button" id="submit-button" type="button">Add mock</button>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-title">
+            <div><p class="eyebrow">ACTIVE ENDPOINTS</p><h2 id="active-collection-name">Configured mocks</h2></div>
+            <span class="count" id="mock-count">0</span>
+          </div>
+          <div class="mock-search-wrap">
+            <label class="search-field">
+              <span class="visually-hidden">Search mocks in selected collection</span>
+              <input id="mock-search" type="search" placeholder="Search this collection by method or path…">
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Latency</th><th>Headers</th><th>Requests</th><th></th></tr></thead>
+              <tbody id="mocks-body"></tbody>
+            </table>
+          </div>
+          <div id="empty-state" class="empty">No mocks yet. Create one to start testing.</div>
+        </section>
+      </div>
+
+      <section class="panel history-panel" aria-labelledby="history-heading">
+        <div class="panel-title">
+          <div><p class="eyebrow">REQUEST INSPECTOR</p><h2 id="history-heading">Request history</h2></div>
+          <div class="history-title-actions">
+            <span class="count" id="history-count">0</span>
+            <button id="refresh-history" type="button">Refresh</button>
+            <button id="clear-history" class="danger" type="button">Clear history</button>
+          </div>
+        </div>
+        <div class="history-toolbar">
+          <label class="search-field">
+            <span class="visually-hidden">Search request history</span>
+            <input id="history-search" type="search" placeholder="Search requests by method, path, or status…">
+          </label>
+          <small>Showing requests for the selected collection</small>
+        </div>
+        <div class="history-layout">
+          <div class="history-feed">
+            <div id="history-list" class="history-list"></div>
+            <div id="history-empty" class="empty">No requests captured for this collection yet.</div>
+          </div>
+          <aside class="request-inspector" aria-label="Request details">
+            <div id="inspector-empty" class="inspector-empty">
+              <span>↗</span>
+              <strong>Select a request</strong>
+              <p>Inspect its request data, matched mock, response, and timing.</p>
+            </div>
+            <div id="inspector-content" hidden>
+              <div class="inspector-heading">
+                <div><span id="inspector-method" class="method">GET</span><code id="inspector-path">/collection/path</code></div>
+                <button id="replay-request" type="button">Replay request</button>
+              </div>
+              <dl class="inspector-summary">
+                <div><dt>Status</dt><dd id="inspector-status">200</dd></div>
+                <div><dt>Duration</dt><dd id="inspector-duration">0 ms</dd></div>
+                <div><dt>Captured</dt><dd id="inspector-created">—</dd></div>
+                <div><dt>Match</dt><dd id="inspector-match">—</dd></div>
+                <div><dt>Client</dt><dd id="inspector-client">—</dd></div>
+              </dl>
+              <section class="inspector-section">
+                <h3>Query parameters</h3>
+                <pre id="inspector-query"></pre>
+              </section>
+              <section class="inspector-section">
+                <h3>Request headers</h3>
+                <pre id="inspector-request-headers"></pre>
+              </section>
+              <section class="inspector-section">
+                <h3>Request body</h3>
+                <pre id="inspector-request-body"></pre>
+              </section>
+              <section class="inspector-section response">
+                <h3>Response headers</h3>
+                <pre id="inspector-response-headers"></pre>
+              </section>
+              <section class="inspector-section response">
+                <h3>Response body</h3>
+                <pre id="inspector-response-body"></pre>
+              </section>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </main>
+  <dialog id="response-preview" class="response-preview" aria-labelledby="preview-title">
+    <div class="preview-header">
+      <div>
+        <p class="eyebrow" id="preview-eyebrow">CONFIGURED RESPONSE</p>
+        <h2 id="preview-title">Response preview</h2>
+      </div>
+      <button id="close-preview" type="button" aria-label="Close response preview">×</button>
+    </div>
+    <div class="preview-request">
+      <span id="preview-method" class="method">GET</span>
+      <code id="preview-path">/collection/path</code>
+      <strong id="preview-status">200 OK</strong>
+      <small id="preview-latency">0 ms latency</small>
+    </div>
+    <section class="preview-section">
+      <h3>Response headers</h3>
+      <dl id="preview-headers" class="preview-headers"></dl>
+    </section>
+    <section class="preview-section">
+      <h3>Response body</h3>
+      <pre id="preview-body" class="preview-body"></pre>
+    </section>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script>
+    window.apiMockerConfig = {
+      collectionUrl: "{% url 'api_mocker:mocks_collection' %}",
+      collectionsUrl: "{% url 'api_mocker:collections' %}",
+      historyUrl: "{% url 'api_mocker:request_history' %}",
+      defaultCollectionId: "00000000-0000-0000-0000-000000000001"
+    };
+  </script>
+  <script src="{% static 'api_mocker/mocker.js' %}?v=20260725-8"></script>
+</body>
+</html>

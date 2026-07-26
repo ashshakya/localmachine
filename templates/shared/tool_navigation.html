@@ -1,0 +1,5 @@
+<nav class="global-tool-nav" aria-label="Product navigation">
+  <a href="{% url 'document_viewer:home' %}"{% if active_tool == "documentation" %} class="active" aria-current="page"{% endif %}>Documentation</a>
+  <a href="{% url 'workspace:dashboard' %}"{% if active_tool == "command_center" %} class="active" aria-current="page"{% endif %}>Command Center</a>
+  <a href="{% url 'api_mocker:dashboard' %}"{% if active_tool == "api_mocker" %} class="active" aria-current="page"{% endif %}>API Mocker</a>
+</nav>

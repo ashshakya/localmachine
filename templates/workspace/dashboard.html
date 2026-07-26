@@ -1,0 +1,134 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Local Project Command Center</title>
+  <link rel="stylesheet" href="{% static 'workspace/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/documentation_theme.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
+</head>
+<body class="command-theme">
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" href="{% url 'workspace:dashboard' %}"><span class="brand-mark">⌘</span><span>Command<em>Center</em></span></a>
+    <nav aria-label="Workspace navigation">
+      <span class="nav-label">Workspace</span>
+      <a class="nav-item" href="{% url 'document_viewer:home' %}"><i>D/</i><span>Documentation</span></a>
+      <a class="nav-item active" href="#overview"><i>▦</i><span>Overview</span></a>
+      <a class="nav-item" href="#repositories"><i>⌘</i><span>Repositories</span><b id="nav-repo-count">{{ stats.repositories }}</b></a>
+      <a class="nav-item" href="#tasks"><i>✓</i><span>My tasks</span><b id="nav-task-count">{{ tasks|length }}</b></a>
+      <a class="nav-item" href="#activity"><i>↗</i><span>Activity</span></a>
+      <a class="nav-item" href="#services"><i>●</i><span>Services</span></a>
+      <a class="nav-item" href="{% url 'api_mocker:dashboard' %}"><i>⌁</i><span>API Mocks</span></a>
+    </nav>
+    <section class="side-repos">
+      <header><span>Live repositories</span><span class="live"><i></i> live</span></header>
+      <div id="side-repo-list">
+      {% for repo in repositories|slice:":6" %}
+      <a href="{% url 'workspace:repository_detail' repo.name %}"><i class="repo-dot {{ repo.health }}"></i><span>{{ repo.name }}</span><small>{{ repo.branch }}</small></a>
+      {% empty %}<p>No repositories found.</p>{% endfor %}
+      </div>
+    </section>
+    <div class="profile"><span class="avatar">{{ activity.0.author|default:"AS"|slice:":2"|upper }}</span><span><strong>{{ activity.0.author|default:"Local user" }}</strong><small>{{ workspace_root }}</small></span></div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <p>Local workspace <span>/</span> Overview</p>
+      {% include "shared/tool_navigation.html" with active_tool="command_center" %}
+      <div class="top-actions"><span class="sync-state"><i></i> Live Git data</span><button id="refresh-all" type="button">↻ Refresh data</button></div>
+    </header>
+
+    <div class="content" id="overview">
+      <section class="welcome">
+        <div><p class="eyebrow">LOCAL WORKSPACE</p><h1>Your work, as it is now.</h1><p>Live branches, changes, commits, services, and tasks—without status-report theatre.</p></div>
+        <div class="updated"><span>Last synced</span><strong id="last-synced">just now</strong><small>{{ workspace_root }}</small></div>
+      </section>
+
+      <section class="metrics" aria-label="Live workspace metrics">
+        <article><span class="metric-icon purple">⌘</span><small>Git repositories</small><strong id="stat-repositories">{{ stats.repositories }}</strong><p><b>{{ stats.clean_repositories }}</b> clean right now</p></article>
+        <article><span class="metric-icon orange">±</span><small>Open file changes</small><strong id="stat-changes">{{ stats.open_changes }}</strong><p>Across tracked workspaces</p></article>
+        <article class="commit-metric"><span class="metric-icon green">↗</span><small>Commits · <span id="commit-range-label">{{ range_short_label }}</span></small><strong id="stat-commits">{{ stats.commits_in_range }}</strong><p>From complete local Git history</p><form id="custom-range-form" class="custom-range-form"><label for="custom-commit-days">Commit days</label><input id="custom-commit-days" name="days" type="number" min="1" max="3650" step="1" inputmode="numeric" placeholder="Days" aria-label="Custom commit history days"><button type="submit">Apply</button></form></article>
+        <article><span class="metric-icon blue">●</span><small>Healthy services</small><strong><span id="stat-services">{{ stats.healthy_services }}</span><em>/ {{ stats.total_services }}</em></strong><p>Checked server-side</p></article>
+      </section>
+
+      <div class="layout">
+        <div class="main-column">
+          <section class="card" id="repositories">
+            <header class="card-head"><div><span class="eyebrow">Source control</span><h2>Active repositories</h2></div><span class="data-label">Auto-discovered</span></header>
+            <div class="repo-list" id="repo-list">
+              {% for repo in repositories %}
+              <article class="repo-row" id="repo-{{ repo.name|slugify }}">
+                <span class="repo-monogram">{{ repo.name|slice:":2"|upper }}</span>
+                <div class="repo-primary"><strong><a href="{% url 'workspace:repository_detail' repo.name %}">{{ repo.name }}</a></strong><span title="{{ repo.path }}">{{ repo.path }}</span></div>
+                <div class="branch"><small>BRANCH</small><strong>⑂ {{ repo.branch }}</strong></div>
+                <div class="changes"><small>CHANGES</small><strong class="{{ repo.health }}">{{ repo.changes }}</strong><span>{{ repo.modified }} modified · {{ repo.untracked }} new</span></div>
+                <div class="commit"><small>LATEST COMMIT</small><strong>{{ repo.last_commit.subject|truncatechars:44 }}</strong><span>{{ repo.last_commit.hash }} · {{ repo.last_commit.relative }}</span></div>
+                <span class="repo-status {{ repo.health }}"><i></i>{% if repo.is_clean %}Clean{% else %}Working{% endif %}</span>
+                <button class="external repo-open" type="button" data-repo-path="{{ repo.path }}" aria-label="Open {{ repo.name }} in Sublime Merge" title="Open in Sublime Merge">↗</button>
+              </article>
+              {% empty %}<div class="empty">No Git repositories were found under {{ workspace_root }}.</div>{% endfor %}
+            </div>
+          </section>
+
+          <section class="card" id="activity">
+            <header class="card-head"><div><span class="eyebrow">Real Git history</span><h2>Recent activity</h2></div><label class="range-picker"><span>Period</span><select id="commit-range" aria-label="Commit history period">{% for value, label in commit_ranges %}<option value="{{ value }}" {% if range_days == value %}selected{% endif %}>{{ label }}</option>{% endfor %}<option value="custom" disabled>Custom</option></select></label></header>
+            <div class="activity-list" id="activity-list">
+              {% for event in activity|slice:":8" %}
+              <article><span class="avatar">{{ event.author|slice:":2"|upper }}</span><div><strong>{{ event.subject }}</strong><span>{{ event.author }} in <b>{{ event.repository }}</b></span></div><code>{{ event.hash }}</code><time datetime="{{ event.iso }}">{{ event.relative }}</time></article>
+              {% empty %}<div class="empty">No recent commits found.</div>{% endfor %}
+            </div>
+          </section>
+
+          <section class="card" id="tasks">
+            <header class="card-head"><div><span class="eyebrow">MySQL-backed</span><h2>My work queue</h2></div><button class="text-button" id="show-task-form" type="button">＋ Add task</button></header>
+            <form class="task-form" id="task-form" hidden><input id="task-title" required maxlength="240" placeholder="What needs doing?"><select id="task-repository"><option value="">No repository</option>{% for repo in repositories %}<option value="{{ repo.name }}">{{ repo.name }}</option>{% endfor %}</select><button type="submit">Add task</button></form>
+            <div class="task-list" id="task-list">
+              {% for task in tasks %}<article data-task-id="{{ task.id }}" class="{% if task.completed %}done{% endif %}"><button class="task-toggle" type="button" aria-label="Toggle {{ task.title }}">{% if task.completed %}✓{% endif %}</button><div><strong>{{ task.title }}</strong><span>{{ task.repository|default:"General" }} · added {{ task.created_at|timesince }} ago</span></div></article>
+              {% empty %}<div class="empty" id="task-empty">No static tasks here. Add a real one when you need it.</div>{% endfor %}
+            </div>
+          </section>
+        </div>
+
+        <aside class="right-column">
+          <section class="card" id="services">
+            <header class="card-head"><div><span class="eyebrow">Network</span><h2>Local services</h2></div><button class="icon-button" id="refresh-services" type="button" aria-label="Refresh services">↻</button></header>
+            <div class="service-list" id="service-list">
+              {% for service in services %}<article><i class="health {{ service.status }}"></i><div><strong>{{ service.name }}</strong><span>{{ service.url }}</span></div><small>{% if service.latency %}{{ service.latency }}ms{% else %}offline{% endif %}</small><a href="{{ service.url }}" target="_blank" rel="noreferrer" aria-label="Open {{ service.name }}">↗</a></article>{% endfor %}
+            </div>
+            <footer>Server-side checks · every 30 seconds</footer>
+          </section>
+
+          <section class="note">
+            <header><span>▱ Daily note</span><small id="note-status">Saved in Django</small></header>
+            <textarea id="daily-note" aria-label="Daily note" placeholder="What matters today?">{{ note.content }}</textarea>
+            <footer><time>{% now "M d" %}</time><span>MySQL · auto-save</span></footer>
+          </section>
+
+          <section class="card">
+            <header class="card-head"><div><span class="eyebrow">Quick launch</span><h2>Work links</h2></div></header>
+            <div class="quick-links">
+              <a href="{% url 'api_mocker:dashboard' %}"><span>⌁</span><strong>API Mocker</strong><small>Build and serve mock APIs</small></a>
+              {% for repo in repositories|slice:":4" %}<button class="repo-quick-link repo-open" type="button" data-repo-path="{{ repo.path }}"><span>⌘</span><strong>{{ repo.name }}</strong><small>{{ repo.branch }} · Sublime Merge</small></button>{% endfor %}
+              {% for service in services|slice:":2" %}<a href="{{ service.url }}" target="_blank" rel="noreferrer"><span>●</span><strong>{{ service.name }}</strong><small>{{ service.status }}</small></a>{% endfor %}
+            </div>
+          </section>
+
+          <section class="card">
+            <header class="card-head"><div><span class="eyebrow">Commit ownership</span><h2>Recent contributors</h2></div></header>
+            <div class="contributors" id="contributors-list">
+              {% for contributor in contributors %}<article><span class="avatar">{{ contributor.name|slice:":2"|upper }}</span><strong>{{ contributor.name }}</strong><div><i style="width:{% widthratio contributor.commits stats.commits_in_range 100 %}%"></i></div><b>{{ contributor.commits }}</b></article>{% empty %}<div class="empty">No contributor data yet.</div>{% endfor %}
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="{% static 'workspace/dashboard.js' %}"></script>
+</body>
+</html>

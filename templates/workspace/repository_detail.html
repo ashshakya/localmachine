@@ -1,0 +1,114 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{{ repository.name }} · Repository Details</title>
+  <link rel="stylesheet" href="{% static 'workspace/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'workspace/repository_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/documentation_theme.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
+</head>
+<body class="repo-detail-page command-theme">
+  <header class="repo-topbar">
+    <a class="back-link" href="{% url 'workspace:dashboard' %}">← Dashboard</a>
+    {% include "shared/tool_navigation.html" with active_tool="command_center" %}
+    <a class="refresh-link" href="?days={{ range_days }}">↻ Refresh</a>
+  </header>
+
+  <main class="repo-detail-shell">
+    <section class="repo-hero">
+      <div class="repo-identity">
+        <span class="repo-hero-mark">{{ repository.name|slice:':2'|upper }}</span>
+        <div><span class="eyebrow">Repository intelligence</span><h1>{{ repository.name }}</h1><p>{{ repository.path }}</p></div>
+      </div>
+      <div class="repo-hero-actions">
+        <span class="repo-status {{ repository.health }}"><i></i>{% if repository.is_clean %}Clean{% else %}{{ repository.changes }} local changes{% endif %}</span>
+        <button class="open-local-repo" type="button" data-repo-path="{{ repository.path }}">Open in Sublime Merge ↗</button>
+      </div>
+      <div class="repo-facts"><span><small>Current branch</small><strong>⑂ {{ repository.branch }}</strong></span><span><small>Sync state</small><strong>{{ repository.ahead }} ahead · {{ repository.behind }} behind</strong></span><span><small>Latest commit</small><strong>{{ repository.last_commit.hash }} · {{ repository.last_commit.relative }}</strong></span></div>
+    </section>
+
+    <section class="repo-metrics" aria-label="Repository summary">
+      <article><span class="metric-icon purple">⌘</span><small>Total commits</small><strong>{{ stats.total_commits }}</strong><p>Complete repository history</p></article>
+      <article><span class="metric-icon green">↗</span><small>Commits · {{ range_short_label }}</small><strong>{{ stats.commits_in_range }}</strong><p>{{ stats.commits_per_week }} per week</p></article>
+      <article><span class="metric-icon blue">●</span><small>Contributors</small><strong>{{ stats.contributors }}</strong><p>Active in selected period</p></article>
+      <article><span class="metric-icon orange">⑂</span><small>Local branches</small><strong>{{ stats.branches }}</strong><p>{{ stats.tags }} tags · {{ stats.merges }} merges</p></article>
+      <article><span class="metric-icon purple">▤</span><small>Tracked files</small><strong>{{ stats.tracked_files }}</strong><p>{{ stats.files_touched }} touched in period</p></article>
+      <article><span class="metric-icon green">±</span><small>Code movement</small><strong class="churn"><b>+{{ stats.additions }}</b> <em>−{{ stats.deletions }}</em></strong><p>Selected commit period</p></article>
+    </section>
+
+    <section class="period-card">
+      <div><span class="eyebrow">Analysis window</span><strong>{{ range_label }}</strong></div>
+      <form method="get" class="repo-range-form">
+        <select name="days" aria-label="Contribution period">{% for value, label in commit_ranges %}<option value="{{ value }}" {% if range_days == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        <input name="days" type="number" min="1" max="3650" placeholder="Custom days" aria-label="Custom contribution days">
+        <button type="submit">Update summary</button>
+      </form>
+    </section>
+
+    <div class="repo-detail-grid">
+      <div class="repo-detail-main">
+        <section class="detail-card contribution-card">
+          <header><div><span class="eyebrow">Commit heat map</span><h2>Daily commit activity</h2></div><span>Last 12 weeks</span></header>
+          <div class="heatmap-shell">
+            <div class="heatmap-weekdays" aria-hidden="true"><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span><span>Sun</span></div>
+            <div class="commit-heatmap" aria-label="Daily commit heat map for the last 12 weeks">
+              {% for week in heatmap_weeks %}<div class="heatmap-week" aria-label="Week of {{ week.label }}">{% for day in week.days %}<span class="heat-cell level-{{ day.level }}{% if day.future %} future{% endif %}" title="{{ day.count }} commit{{ day.count|pluralize }} on {{ day.label }}" aria-label="{{ day.count }} commit{{ day.count|pluralize }} on {{ day.label }}"></span>{% endfor %}</div>{% endfor %}
+            </div>
+          </div>
+          <footer class="heatmap-footer"><span>Each square is one day</span><span class="heat-legend">Less <i class="level-0"></i><i class="level-1"></i><i class="level-2"></i><i class="level-3"></i><i class="level-4"></i> More</span></footer>
+        </section>
+
+        <section class="detail-card">
+          <header><div><span class="eyebrow">Commit log</span><h2>Recent contributions</h2></div><span>Latest {{ activity|length }}</span></header>
+          <div class="repo-commit-list">
+            {% for event in activity %}<article><span class="avatar">{{ event.author|slice:':2'|upper }}</span><div><strong>{{ event.subject }}</strong><span>{{ event.author }} · {{ event.relative }}</span></div><code>{{ event.hash }}</code></article>{% empty %}<div class="empty">No commits in this period.</div>{% endfor %}
+          </div>
+        </section>
+
+        <section class="detail-card">
+          <header><div><span class="eyebrow">Working tree</span><h2>Local file changes</h2></div><span>{{ repository.changes }} open</span></header>
+          <div class="working-files">
+            {% for file in working_files %}<article><code class="{{ file.kind }}">{{ file.code }}</code><span>{{ file.path }}</span></article>{% empty %}<div class="clean-state"><i>✓</i><strong>Working tree is clean</strong><span>No uncommitted files in this repository.</span></div>{% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <aside class="repo-detail-side">
+        <section class="detail-card">
+          <header><div><span class="eyebrow">Ownership</span><h2>Top contributors</h2></div></header>
+          <div class="repo-contributors">
+            {% for contributor in contributors %}<article><span class="avatar">{{ contributor.name|slice:':2'|upper }}</span><div><strong>{{ contributor.name }}</strong><span><i style="width:{{ contributor.percent }}%"></i></span></div><b>{{ contributor.commits }}</b><small>{{ contributor.percent }}%</small></article>{% empty %}<div class="empty">No contributors in this period.</div>{% endfor %}
+          </div>
+        </section>
+
+        <section class="detail-card">
+          <header><div><span class="eyebrow">Branch activity</span><h2>Local branches</h2></div></header>
+          <div class="branch-list">
+            {% for branch in branches %}<article><i class="{% if branch.current %}current{% endif %}"></i><div><strong>{{ branch.name }}</strong><span>{{ branch.subject|truncatechars:46 }}</span></div><small>{{ branch.relative }}</small></article>{% empty %}<div class="empty">No local branches found.</div>{% endfor %}
+          </div>
+        </section>
+
+        <section class="detail-card">
+          <header><div><span class="eyebrow">Repository shape</span><h2>File composition</h2></div></header>
+          <div class="file-types">
+            {% for file in file_types %}<article><strong>{{ file.name }}</strong><span><i style="width:{{ file.percent }}%"></i></span><b>{{ file.count }}</b><small>{{ file.percent }}%</small></article>{% empty %}<div class="empty">No tracked files found.</div>{% endfor %}
+          </div>
+        </section>
+
+        <section class="detail-card lifecycle-card">
+          <header><div><span class="eyebrow">Lifecycle</span><h2>History bounds</h2></div></header>
+          <dl><div><dt>First commit</dt><dd>{{ first_commit.subject|truncatechars:42 }}<small>{{ first_commit.author }} · {{ first_commit.relative }}</small></dd></div><div><dt>Latest commit</dt><dd>{{ last_commit.subject|truncatechars:42 }}<small>{{ last_commit.author }} · {{ last_commit.relative }}</small></dd></div><div><dt>Repository age</dt><dd>{{ stats.age_days }} days</dd></div></dl>
+        </section>
+
+        {% if tasks %}<section class="detail-card"><header><div><span class="eyebrow">Work queue</span><h2>Linked tasks</h2></div></header><div class="linked-tasks">{% for task in tasks %}<article class="{% if task.completed %}done{% endif %}"><i>{% if task.completed %}✓{% else %}○{% endif %}</i><span>{{ task.title }}</span></article>{% endfor %}</div></section>{% endif %}
+      </aside>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="{% static 'workspace/repository_detail.js' %}"></script>
+</body>
+</html>

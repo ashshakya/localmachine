@@ -1,0 +1,111 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Local Documentation Studio</title>
+  <link rel="stylesheet" href="{% static 'document_viewer/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'document_viewer:home' %}" aria-label="Local Documentation Studio home">
+      <span class="brand-mark">D/</span>
+      <span>Documentation Studio</span>
+    </a>
+    {% include "shared/tool_navigation.html" with active_tool="documentation" %}
+    <div class="topbar-actions">
+      <label class="switch-label" for="autosave">
+        <input id="autosave" type="checkbox">
+        <span class="switch" aria-hidden="true"></span>
+        Autosave
+      </label>
+      <button id="saveButton" class="button button-primary" type="button" disabled>Save <span class="shortcut">⌘S</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section id="welcome" class="welcome">
+      <div class="welcome-copy">
+        <p class="eyebrow">LOCAL-FIRST DOCS</p>
+        <h1>Write here.<br><em>See it there.</em></h1>
+        <p class="intro">Open a Markdown or HTML file, or paste Markdown directly. Edit the source and watch the rendered page update instantly.</p>
+      </div>
+      <div class="open-card">
+        <form id="openForm">
+          <label for="filePath">Document path</label>
+          <div class="path-row">
+            <input id="filePath" name="filePath" type="text" spellcheck="false" autocomplete="off" value="{{ default_document_directory }}" placeholder="{{ default_document_directory }}guide.md" required>
+            <button class="button button-dark" type="submit">Open file <span aria-hidden="true">→</span></button>
+          </div>
+          <p class="field-help">Relative paths start in {{ default_document_directory }} · UTF-8 · up to 5 MB</p>
+          <p id="openError" class="form-error" role="alert" hidden></p>
+        </form>
+        <div class="open-divider"><span>or upload</span></div>
+        <div id="dropZone" class="drop-zone" aria-label="Drop a Markdown or HTML document" tabindex="0">
+          <input id="fileUpload" type="file" accept=".md,.markdown,.html,.htm,text/markdown,text/html" hidden>
+          <span class="upload-icon" aria-hidden="true">↥</span>
+          <div>
+            <strong>Drop a document here</strong>
+            <span>or choose a file from your computer</span>
+          </div>
+          <button id="chooseFile" class="button button-outline" type="button">Choose file</button>
+        </div>
+        <button id="pasteMarkdown" class="paste-markdown" type="button">
+          <span class="paste-icon" aria-hidden="true">¶</span>
+          <span><strong>Paste Markdown directly</strong><small>Start with a blank editor—no file needed</small></span>
+          <b aria-hidden="true">→</b>
+        </button>
+        <p id="uploadError" class="form-error" role="alert" hidden></p>
+      </div>
+    </section>
+
+    <section id="workspace" class="workspace" hidden>
+      <div class="document-bar">
+        <div class="file-identity">
+          <span id="fileType" class="file-type">MD</span>
+          <div><strong id="fileName">untitled.md</strong><span id="fileLocation"></span></div>
+        </div>
+        <div class="document-actions">
+          <span id="saveState" class="save-state"><span class="state-dot"></span> Saved</span>
+          <button id="changeFile" class="text-button" type="button">Open another file</button>
+        </div>
+      </div>
+
+      <div id="externalChange" class="change-banner" hidden>
+        <span>This file changed outside Documentation Studio.</span>
+        <div>
+          <button id="dismissChange" class="text-button" type="button">Keep my version</button>
+          <button id="reloadFile" class="button button-small" type="button">Reload file</button>
+        </div>
+      </div>
+
+      <div id="panes" class="panes">
+        <section class="pane editor-pane" aria-label="Document editor">
+          <div class="pane-header"><span>Source</span><span id="cursorPosition">Ln 1, Col 1</span></div>
+          <textarea id="editor" aria-label="Document source" spellcheck="false" placeholder="Paste or type Markdown here…"></textarea>
+        </section>
+        <div id="divider" class="divider" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0"><span></span></div>
+        <section class="pane preview-pane" aria-label="Rendered preview">
+          <div class="pane-header"><span>Preview</span><button id="refreshPreview" class="icon-button" type="button" title="Refresh preview" aria-label="Refresh preview">↻</button></div>
+          <iframe id="preview" title="Document preview" sandbox=""></iframe>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    window.documentViewerConfig = {
+      loadUrl: "{% url 'document_viewer:load' %}",
+      renderUrl: "{% url 'document_viewer:render' %}",
+      saveUrl: "{% url 'document_viewer:save' %}",
+      statusUrl: "{% url 'document_viewer:status' %}"
+    };
+  </script>
+  <script src="{% static 'document_viewer/app.js' %}" defer></script>
+</body>
+</html>

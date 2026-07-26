@@ -1,0 +1,381 @@
+/* Shared visual language from Documentation Studio. */
+.command-theme,
+.mocker-theme {
+  --ink: #17211b;
+  --muted: #6d746e;
+  --line: #d6d0c3;
+  --canvas: #f5f1e8;
+  --card: #fffdf8;
+  --panel: #fffdf8;
+  --nav: #f5f1e8;
+  --purple: #f05a28;
+  --green: #2d6b4f;
+  --orange: #f05a28;
+  --red: #a74332;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.command-theme .eyebrow,
+.mocker-theme .eyebrow {
+  color: var(--accent, #f05a28);
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+
+/* Command Center */
+.command-theme .shell {
+  grid-template-columns: 246px minmax(0, 1fr);
+}
+
+.command-theme .sidebar {
+  color: var(--ink);
+  background: var(--card);
+  border-right: 1px solid var(--line);
+}
+
+.command-theme .brand {
+  color: var(--ink);
+  letter-spacing: -.02em;
+}
+
+.command-theme .brand em {
+  color: var(--muted);
+}
+
+.command-theme .brand-mark {
+  color: var(--canvas);
+  background: var(--ink);
+  border-radius: 0;
+  box-shadow: none;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.command-theme .nav-label,
+.command-theme .side-repos header {
+  color: #8c897f;
+}
+
+.command-theme .nav-item {
+  color: var(--muted);
+  border-radius: 0;
+}
+
+.command-theme .nav-item:hover {
+  color: var(--ink);
+  background: #f0ece3;
+}
+
+.command-theme .nav-item.active {
+  color: var(--ink);
+  background: #ebe7de;
+  box-shadow: inset 3px 0 var(--orange);
+}
+
+.command-theme .nav-item b {
+  color: #fff;
+  background: var(--orange);
+}
+
+.command-theme .side-repos,
+.command-theme .profile {
+  border-color: var(--line);
+}
+
+.command-theme .side-repos a,
+.command-theme #side-repo-list > a {
+  color: var(--muted);
+}
+
+.command-theme .side-repos a:hover,
+.command-theme #side-repo-list > a:hover {
+  color: var(--ink);
+  background: #f0ece3;
+}
+
+.command-theme .side-repos small,
+.command-theme #side-repo-list > a small,
+.command-theme .profile small {
+  color: #918e85;
+}
+
+.command-theme .topbar,
+.command-theme .repo-topbar {
+  color: var(--muted);
+  background: rgba(245, 241, 232, .94);
+  border-color: var(--line);
+}
+
+.command-theme .welcome h1,
+.command-theme .repo-identity h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -.045em;
+}
+
+.command-theme .metrics article,
+.command-theme .card,
+.command-theme .updated,
+.command-theme .repo-metrics article,
+.command-theme .period-card,
+.command-theme .detail-card {
+  background: var(--card);
+  border-color: var(--line);
+  border-radius: 0;
+  box-shadow: 5px 5px 0 rgba(23, 33, 27, .055);
+}
+
+.command-theme .card-head,
+.command-theme .detail-card > header {
+  border-color: var(--line);
+  background: #fffdf8;
+}
+
+.command-theme .metric-icon,
+.command-theme .repo-monogram,
+.command-theme .quick-links a > span,
+.command-theme .quick-links .repo-quick-link > span {
+  border-radius: 0;
+}
+
+.command-theme .metric-icon.purple,
+.command-theme .repo-monogram,
+.command-theme .quick-links a > span,
+.command-theme .quick-links .repo-quick-link > span {
+  color: var(--orange);
+  background: #fff0e8;
+}
+
+.command-theme .metric-icon.orange {
+  color: var(--orange);
+  background: #fff0e8;
+}
+
+.command-theme .metric-icon.green {
+  color: var(--green);
+  background: #e6eee9;
+}
+
+.command-theme .metric-icon.blue {
+  color: #536b5c;
+  background: #e9ede7;
+}
+
+.command-theme .top-actions button,
+.command-theme .task-form button,
+.command-theme .custom-range-form button,
+.command-theme .repo-range-form button,
+.command-theme .open-local-repo {
+  border-radius: 0;
+}
+
+.command-theme .custom-range-form button {
+  background: var(--orange);
+}
+
+.command-theme .note {
+  color: var(--ink);
+  background: #fff4cf;
+  border-color: #d9c887;
+  border-radius: 0;
+  box-shadow: 5px 5px 0 rgba(23, 33, 27, .055);
+}
+
+.command-theme .quick-links a,
+.command-theme .quick-links .repo-quick-link {
+  border-radius: 0;
+  background: var(--card);
+}
+
+.command-theme .quick-links a:hover,
+.command-theme .quick-links .repo-quick-link:hover {
+  border-color: var(--orange);
+  box-shadow: 4px 4px 0 rgba(240, 90, 40, .12);
+}
+
+.command-theme .range-picker select,
+.command-theme .custom-range-form input,
+.command-theme .task-form input,
+.command-theme .task-form select,
+.command-theme .repo-range-form select,
+.command-theme .repo-range-form input {
+  border-radius: 0;
+  border-color: var(--line);
+  background: var(--card);
+}
+
+.command-theme .external,
+.command-theme .text-button,
+.command-theme .service-list a,
+.command-theme .repo-primary a:hover,
+.command-theme .back-link:hover,
+.command-theme .refresh-link:hover {
+  color: var(--orange);
+}
+
+/* Repository detail */
+.command-theme.repo-detail-page {
+  background: var(--canvas);
+}
+
+.command-theme .repo-hero {
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: 8px 8px 0 rgba(23, 33, 27, .08);
+}
+
+.command-theme .repo-hero-mark {
+  color: var(--canvas);
+  background: var(--ink);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.command-theme .repo-identity p,
+.command-theme .repo-hero .eyebrow,
+.command-theme .repo-facts small {
+  color: var(--muted);
+}
+
+.command-theme .repo-facts {
+  border-color: var(--line);
+}
+
+.command-theme .repo-facts strong {
+  color: var(--ink);
+}
+
+.command-theme .open-local-repo {
+  color: #fff;
+  background: var(--orange);
+}
+
+.command-theme .bar-wrap i {
+  background: linear-gradient(180deg, #f05a28, #f49a73);
+}
+
+.command-theme .repo-commit-list code,
+.command-theme .linked-tasks i {
+  color: var(--orange);
+}
+
+.command-theme .repo-contributors div > span i {
+  background: var(--orange);
+}
+
+/* API Mocker */
+.mocker-theme .topbar {
+  color: var(--ink);
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+}
+
+.mocker-theme .brand {
+  color: var(--ink);
+}
+
+.mocker-theme .brand span {
+  color: var(--canvas);
+  background: var(--ink);
+  border-radius: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.mocker-theme .brand em,
+.mocker-theme .back-link {
+  color: var(--muted);
+}
+
+.mocker-theme .back-link:hover {
+  color: var(--orange);
+}
+
+.mocker-theme .intro h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 500;
+  letter-spacing: -.055em;
+}
+
+.mocker-theme .intro > code {
+  color: #b94018;
+  background: var(--card);
+  border-color: var(--line);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 rgba(23, 33, 27, .06);
+}
+
+.mocker-theme .panel {
+  background: var(--card);
+  border-color: var(--line);
+  border-radius: 0;
+  box-shadow: 7px 7px 0 rgba(23, 33, 27, .07);
+}
+
+.mocker-theme .panel-title {
+  border-color: var(--line);
+  background: var(--card);
+}
+
+.mocker-theme .count {
+  color: #fff;
+  background: var(--orange);
+  border-radius: 0;
+}
+
+.mocker-theme input,
+.mocker-theme select,
+.mocker-theme textarea {
+  border-color: var(--line);
+  border-radius: 0;
+  background: #fff;
+}
+
+.mocker-theme input:focus,
+.mocker-theme select:focus,
+.mocker-theme textarea:focus {
+  border-color: var(--orange);
+  box-shadow: inset 0 0 0 1px var(--orange);
+}
+
+.mocker-theme .primary-button {
+  border-radius: 0;
+  background: var(--orange);
+}
+
+.mocker-theme .link-button {
+  color: var(--orange);
+}
+
+.mocker-theme th,
+.mocker-theme td {
+  border-color: var(--line);
+}
+
+.mocker-theme .actions button {
+  border-radius: 0;
+  background: var(--card);
+}
+
+.mocker-theme .actions button:hover {
+  border-color: var(--orange);
+}
+
+.mocker-theme .toast {
+  border-radius: 0;
+  background: var(--ink);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, .18);
+}
+
+@media (max-width: 800px) {
+  .command-theme .shell {
+    display: block;
+  }
+
+  .command-theme .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}

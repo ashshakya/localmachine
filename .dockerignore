@@ -1,0 +1,13 @@
+.codex/
+.DS_Store
+.env
+.git/
+.gitignore
+.pytest_cache/
+.venv/
+__pycache__/
+*.py[cod]
+*.log
+data/*.sqlite3
+data/*.sqlite3-*
+staticfiles/

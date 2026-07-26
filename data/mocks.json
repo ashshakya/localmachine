@@ -1,0 +1,22 @@
+{
+  "collections": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "name": "JioOnePay",
+      "slug": "jioonepay",
+      "description": "Mocks migrated from the original ungrouped workspace."
+    }
+  ],
+  "mocks": [
+    {
+      "method": "POST",
+      "path": "/jop/api/v1/orders/create",
+      "status_code": 200,
+      "response_body": "{\n \"code\": 200,\n \"message\": \"SUCCESS\",\n \"data\": {\n        \"orderId\": \"TR6A44F23401C9391BB1\",\n        \"token\": \"adadud98d90a8d09a8d90a8d09\",\n        \"cardPaymentUrl\": \"https://jiomart.uat.jiomartjcp.com/cart/cardPaymentUrl\",\n        \"otherPayModeUrl\": \"https://jiomart.uat.jiomartjcp.com/cart/otherPayModeUrl\",\n        \"createdDate\": 348343434\n    }\n}",
+      "headers": {},
+      "latency_ms": 5,
+      "id": "a4cc0bc4-7c60-458a-a445-98f576a1c86c",
+      "collection_id": "00000000-0000-0000-0000-000000000001"
+    }
+  ]
+}

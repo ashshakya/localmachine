@@ -1,0 +1,103 @@
+.global-tool-nav {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.global-tool-nav a {
+  padding: 8px 11px;
+  color: #6d746e;
+  background: transparent;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+}
+
+.global-tool-nav a:hover {
+  color: #17211b;
+  background: #ebe7de;
+}
+
+.global-tool-nav a.active {
+  color: #fffdf8;
+  background: #17211b;
+  border-color: #17211b;
+}
+
+.global-tool-nav a.active::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: #f05a28;
+}
+
+.command-theme .topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 16px;
+}
+
+.command-theme .topbar .top-actions {
+  justify-self: end;
+}
+
+.repo-detail-page .repo-topbar .global-tool-nav {
+  justify-self: center;
+}
+
+@media (max-width: 900px) {
+  .topbar:has(> .global-tool-nav) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .topbar > .global-tool-nav {
+    display: flex;
+  }
+
+  .global-tool-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .global-tool-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .global-tool-nav a {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  .global-tool-nav a.active::before {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .global-tool-nav {
+    gap: 0;
+  }
+
+  .global-tool-nav a {
+    padding: 7px 6px;
+    font-size: 9px;
+  }
+
+  .command-theme .topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .command-theme .topbar > p {
+    display: none;
+  }
+}
