@@ -89,6 +89,45 @@ separate deployment/release job. Gunicorn listens on `PORT` (default `8000`),
 and worker count and timeout are controlled with `WEB_CONCURRENCY` and
 `GUNICORN_TIMEOUT`.
 
+## Tag-based releases
+
+Pushing a semantic-version tag runs the GitHub Actions release pipeline. It
+tests the project with SQLite, builds the production image, and publishes it to
+GitHub Container Registry as:
+
+```text
+ghcr.io/ashshakya/localmachine
+```
+
+Create a release directly from the commit that should be deployed:
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+The pipeline publishes `1.0.0`, `1.0`, `1`, `latest`, and a commit-SHA image
+tag. Pull and run the immutable version on the deployment host:
+
+```bash
+docker login ghcr.io
+docker pull ghcr.io/ashshakya/localmachine:1.0.0
+
+docker run -d \
+  --name local-project-dashboard \
+  --restart unless-stopped \
+  -p 8000:8000 \
+  -e DASHBOARD_SECRET_KEY='replace-with-a-long-random-value' \
+  -e DASHBOARD_ALLOWED_HOSTS='dashboard.example.com,localhost,127.0.0.1' \
+  -v dashboard-data:/data \
+  -v /absolute/path/to/workspace:/workspace:rw \
+  ghcr.io/ashshakya/localmachine:1.0.0
+```
+
+The repository workflow needs `Read and write permissions` for GitHub Actions
+packages. Private GHCR packages also require an authenticated `docker login` on
+the deployment host.
+
 ## Live data sources
 
 - Git branches, status, remotes, commit history, and contributors are read on demand.
