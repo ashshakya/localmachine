@@ -1,6 +1,8 @@
 services:
   app:
     image: ghcr.io/ashshakya/localmachine:${TAG}
+    container_name: localmachine
+
     restart: unless-stopped
 
     env_file:
