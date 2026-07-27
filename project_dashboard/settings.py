@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+# System environment variables take precedence. The local .env file only
+# supplies values that are not already present in the process environment.
+load_dotenv(BASE_DIR / ".env", override=False)
 DEBUG = os.environ.get("DASHBOARD_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DASHBOARD_SECRET_KEY", "")
 if not SECRET_KEY:
