@@ -20,6 +20,8 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("DASHBOARD_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+PUBLIC_SITE_URL = os.environ.get("DASHBOARD_PUBLIC_SITE_URL", "").strip().rstrip("/")
+GOOGLE_SITE_VERIFICATION = os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip()
 
 INSTALLED_APPS = [
     "django.contrib.admin",

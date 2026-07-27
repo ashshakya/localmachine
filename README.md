@@ -128,6 +128,31 @@ The repository workflow needs `Read and write permissions` for GitHub Actions
 packages. Private GHCR packages also require an authenticated `docker login` on
 the deployment host.
 
+## Google Search discovery
+
+Set the public HTTPS origin and the verification token supplied by Google Search
+Console in the production environment:
+
+```dotenv
+DASHBOARD_PUBLIC_SITE_URL=https://dashboard.example.com
+GOOGLE_SITE_VERIFICATION=replace-with-search-console-token
+```
+
+The site exposes `/robots.txt` and `/sitemap.xml` at the domain root. Only the
+Documentation Studio home page is included in the sitemap; admin, API mocker,
+repository, dashboard, and API routes are excluded from crawling or marked
+`noindex` because they can contain internal workspace data.
+
+After deployment, verify ownership in Google Search Console and submit:
+
+```text
+https://dashboard.example.com/sitemap.xml
+```
+
+Search indexing is not immediate or guaranteed. The public hostname must resolve
+to the deployment, use a valid HTTPS certificate, and allow Googlebot to fetch
+the home page, `robots.txt`, the sitemap, and the favicon without authentication.
+
 ## Live data sources
 
 - Git branches, status, remotes, commit history, and contributors are read on demand.

@@ -8,5 +8,12 @@ services:
     env_file:
       - /home/deploy/.env
 
+    environment:
+      # Django must see the browser's public HTTPS origin when nginx proxies
+      # requests to Gunicorn over plain HTTP inside the host.
+      DASHBOARD_CSRF_TRUSTED_ORIGINS: ${DASHBOARD_CSRF_TRUSTED_ORIGINS:-https://localmachine.in}
+      DASHBOARD_TRUST_PROXY_HEADERS: ${DASHBOARD_TRUST_PROXY_HEADERS:-1}
+      DASHBOARD_SECURE_COOKIES: ${DASHBOARD_SECURE_COOKIES:-1}
+
     ports:
       - "8000:8000"

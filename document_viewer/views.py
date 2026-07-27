@@ -7,6 +7,8 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from markdown import markdown
 
+from project_dashboard.seo import absolute_public_url
+
 from .services import MAX_FILE_SIZE, file_metadata, read_document, resolve_document, write_document
 
 
@@ -26,7 +28,11 @@ def _error(message, status=400, **extra):
 @ensure_csrf_cookie
 def index(request):
     default_directory = f"{settings.DOCUMENT_VIEWER_DEFAULT_DIRECTORY}/"
-    return render(request, "document_viewer/index.html", {"default_document_directory": default_directory})
+    return render(request, "document_viewer/index.html", {
+        "canonical_url": absolute_public_url(request, request.path),
+        "default_document_directory": default_directory,
+        "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+    })
 
 
 @require_POST

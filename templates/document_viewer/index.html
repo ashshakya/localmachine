@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="description" content="A local-first documentation studio for opening, editing, previewing, and safely saving Markdown and HTML documents.">
+  <meta name="robots" content="index,follow">
+  {% if google_site_verification %}<meta name="google-site-verification" content="{{ google_site_verification }}">{% endif %}
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
   <title>Local Documentation Studio</title>
   <link rel="stylesheet" href="{% static 'document_viewer/styles.css' %}">
   <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
