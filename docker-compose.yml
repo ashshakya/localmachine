@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
 
     env_file:
-      - .env
+      - /home/deploy/.env
 
     ports:
       - "8000:8000"
