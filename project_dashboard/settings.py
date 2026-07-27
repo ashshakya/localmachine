@@ -10,8 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env", override=False)
 DEBUG = os.environ.get("DASHBOARD_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DASHBOARD_SECRET_KEY", "")
-print(DEBUG)
-print(SECRET_KEY)
 if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured("DASHBOARD_SECRET_KEY is required when DASHBOARD_DEBUG=0.")
@@ -103,6 +101,56 @@ STORAGES = {
     },
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOG_LEVEL = os.environ.get("DASHBOARD_LOG_LEVEL", "INFO").upper()
+DATABASE_LOG_LEVEL = os.environ.get("DASHBOARD_DATABASE_LOG_LEVEL", "WARNING").upper()
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": (
+                "{asctime} {levelname} {name} "
+                "process={process:d} thread={thread:d} {message}"
+            ),
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": DATABASE_LOG_LEVEL,
+            "propagate": False,
+        },
+        "gunicorn.access": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "gunicorn.error": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
+}
+
 API_MOCKER_LEGACY_DATA_FILE = Path(
     os.environ.get(
         "API_MOCKER_LEGACY_DATA_FILE",
