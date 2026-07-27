@@ -10,6 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env", override=False)
 DEBUG = os.environ.get("DASHBOARD_DEBUG", "1") == "1"
 SECRET_KEY = os.environ.get("DASHBOARD_SECRET_KEY", "")
+print(DEBUG)
+print(SECRET_KEY)
 if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured("DASHBOARD_SECRET_KEY is required when DASHBOARD_DEBUG=0.")
