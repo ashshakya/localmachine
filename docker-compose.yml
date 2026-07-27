@@ -1,0 +1,7 @@
+services:
+  app:
+    image: ghcr.io/ashshakya/localmachine:${TAG}
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
