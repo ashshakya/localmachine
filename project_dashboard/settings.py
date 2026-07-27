@@ -51,6 +51,7 @@ TEMPLATES = [{
         "django.template.context_processors.request",
         "django.contrib.auth.context_processors.auth",
         "django.contrib.messages.context_processors.messages",
+        "workspace.context_processors.page_visibility",
     ]},
 }]
 WSGI_APPLICATION = "project_dashboard.wsgi.application"

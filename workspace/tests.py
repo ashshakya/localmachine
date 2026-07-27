@@ -1,10 +1,11 @@
 from unittest.mock import patch
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import DailyNote, Task
+from .models import DailyNote, PageVisibility, Task
 from .services import _remote_link
 
 
@@ -33,6 +34,54 @@ DETAIL_SNAPSHOT = {
 
 
 class DashboardTests(TestCase):
+    def test_page_visibility_is_managed_in_django_admin(self):
+        admin_user = get_user_model().objects.create_superuser(
+            username="visibility-admin",
+            password="test-password",
+        )
+        self.client.force_login(admin_user)
+
+        response = self.client.get(
+            reverse("admin:workspace_pagevisibility_changelist")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Command center enabled")
+        self.assertContains(response, "Api mocker enabled")
+
+    def test_disabled_command_center_pages_and_apis_return_not_found(self):
+        PageVisibility.objects.update_or_create(
+            pk=1,
+            defaults={"command_center_enabled": False},
+        )
+
+        requests = [
+            ("get", reverse("workspace:dashboard")),
+            (
+                "get",
+                reverse(
+                    "workspace:repository_detail",
+                    args=["any-repository"],
+                ),
+            ),
+            ("get", reverse("workspace:snapshot")),
+            ("post", reverse("workspace:save_note")),
+            ("post", reverse("workspace:create_task")),
+        ]
+        for method, url in requests:
+            with self.subTest(url=url):
+                if method == "get":
+                    response = self.client.get(url)
+                else:
+                    response = self.client.post(
+                        url,
+                        data="{}",
+                        content_type="application/json",
+                    )
+                self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(self.client.get(reverse("workspace:health")).status_code, 200)
+
     def test_azure_ssh_remote_becomes_clickable_web_url(self):
         remote = "git@ssh.dev.azure.com:v3/GoFynd/FyndPlatformCore/gringotts"
         self.assertEqual(

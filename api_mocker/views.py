@@ -7,6 +7,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
+from workspace.visibility import require_enabled_page
+
 from . import storage
 
 MOCK_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"}
@@ -111,11 +113,13 @@ def _validate_fields(data, partial=False):
 
 
 @require_GET
+@require_enabled_page("api_mocker")
 def dashboard(request):
     return render(request, "api_mocker/index.html")
 
 
 @csrf_exempt
+@require_enabled_page("api_mocker")
 def mocks_collection(request):
     if request.method == "GET":
         return JsonResponse(storage.get_all(request.GET.get("collection_id")), safe=False)
@@ -135,6 +139,7 @@ def mocks_collection(request):
 
 
 @csrf_exempt
+@require_enabled_page("api_mocker")
 def mock_detail(request, mock_id):
     if request.method == "PUT":
         data = _json_body(request)
@@ -160,6 +165,7 @@ def mock_detail(request, mock_id):
 
 
 @csrf_exempt
+@require_enabled_page("api_mocker")
 def collections(request):
     if request.method == "GET":
         return JsonResponse(storage.get_collections(request.GET.get("q", "")), safe=False)
@@ -179,6 +185,7 @@ def collections(request):
 
 
 @csrf_exempt
+@require_enabled_page("api_mocker")
 def collection_detail(request, collection_id):
     if request.method == "PUT":
         data = _json_body(request)
@@ -206,6 +213,7 @@ def collection_detail(request, collection_id):
 
 
 @csrf_exempt
+@require_enabled_page("api_mocker")
 def request_history(request):
     collection_id = request.GET.get("collection_id")
     if request.method == "GET":
@@ -228,6 +236,7 @@ def request_history(request):
 
 
 @require_GET
+@require_enabled_page("api_mocker")
 def request_history_detail(request, log_id):
     entry = storage.get_request_log(log_id)
     if entry is None:

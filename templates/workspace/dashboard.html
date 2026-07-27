@@ -22,7 +22,9 @@
       <a class="nav-item" href="#tasks"><i>✓</i><span>My tasks</span><b id="nav-task-count">{{ tasks|length }}</b></a>
       <a class="nav-item" href="#activity"><i>↗</i><span>Activity</span></a>
       <a class="nav-item" href="#services"><i>●</i><span>Services</span></a>
+      {% if api_mocker_enabled %}
       <a class="nav-item" href="{% url 'api_mocker:dashboard' %}"><i>⌁</i><span>API Mocks</span></a>
+      {% endif %}
     </nav>
     <section class="side-repos">
       <header><span>Live repositories</span><span class="live"><i></i> live</span></header>
@@ -111,7 +113,9 @@
           <section class="card">
             <header class="card-head"><div><span class="eyebrow">Quick launch</span><h2>Work links</h2></div></header>
             <div class="quick-links">
+              {% if api_mocker_enabled %}
               <a href="{% url 'api_mocker:dashboard' %}"><span>⌁</span><strong>API Mocker</strong><small>Build and serve mock APIs</small></a>
+              {% endif %}
               {% for repo in repositories|slice:":4" %}<button class="repo-quick-link repo-open" type="button" data-repo-path="{{ repo.path }}"><span>⌘</span><strong>{{ repo.name }}</strong><small>{{ repo.branch }} · Sublime Merge</small></button>{% endfor %}
               {% for service in services|slice:":2" %}<a href="{{ service.url }}" target="_blank" rel="noreferrer"><span>●</span><strong>{{ service.name }}</strong><small>{{ service.status }}</small></a>{% endfor %}
             </div>

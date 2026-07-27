@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .models import DailyNote, Task
 from .services import dashboard_snapshot, discover_repositories, find_repository, repository_detail_snapshot
+from .visibility import require_enabled_page
 
 COMMIT_RANGES = [
     (7, "7 days"),
@@ -30,6 +31,7 @@ def _commit_range(request):
     return days if days == 0 or 1 <= days <= 3650 else 30
 
 
+@require_enabled_page("command_center")
 def dashboard(request):
     days = _commit_range(request)
     snapshot = dashboard_snapshot(days=days)
@@ -41,6 +43,7 @@ def dashboard(request):
     })
 
 
+@require_enabled_page("command_center")
 def repository_detail(request, repository_name):
     repo = find_repository(repository_name)
     if repo is None:
@@ -60,11 +63,13 @@ def health(request):
 
 
 @require_GET
+@require_enabled_page("command_center")
 def snapshot_api(request):
     return JsonResponse(dashboard_snapshot(days=_commit_range(request)))
 
 
 @require_POST
+@require_enabled_page("command_center")
 def open_repository(request):
     try:
         payload = json.loads(request.body or b"{}")
@@ -116,6 +121,7 @@ def open_repository(request):
 
 
 @require_POST
+@require_enabled_page("command_center")
 def save_note(request):
     payload = json.loads(request.body or b"{}")
     note = DailyNote.current()
@@ -125,6 +131,7 @@ def save_note(request):
 
 
 @require_POST
+@require_enabled_page("command_center")
 def create_task(request):
     payload = json.loads(request.body or b"{}")
     title = str(payload.get("title", "")).strip()
@@ -135,6 +142,7 @@ def create_task(request):
 
 
 @require_POST
+@require_enabled_page("command_center")
 def toggle_task(request, task_id):
     task = get_object_or_404(Task, pk=task_id)
     task.completed = not task.completed

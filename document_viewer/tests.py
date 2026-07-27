@@ -5,6 +5,8 @@ from pathlib import Path
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from workspace.models import PageVisibility
+
 from .services import resolve_document
 
 
@@ -32,6 +34,21 @@ class DocumentViewerTests(TestCase):
         self.assertContains(response, 'aria-current="page"')
         self.assertContains(response, 'id="pasteMarkdown"')
         self.assertContains(response, "Paste Markdown directly")
+
+    def test_disabled_tools_are_hidden_from_product_navigation(self):
+        PageVisibility.objects.update_or_create(
+            pk=1,
+            defaults={
+                "command_center_enabled": False,
+                "api_mocker_enabled": False,
+            },
+        )
+
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, reverse("workspace:dashboard"))
+        self.assertNotContains(response, reverse("api_mocker:dashboard"))
 
     def test_relative_paths_start_in_default_directory(self):
         self.assertEqual(resolve_document("guides/start.md"), (self.default_directory / "guides/start.md").resolve())

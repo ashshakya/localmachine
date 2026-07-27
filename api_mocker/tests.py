@@ -3,6 +3,8 @@ import json
 from django.test import TestCase
 from django.urls import reverse
 
+from workspace.models import PageVisibility
+
 from .models import MockCollection, MockEndpoint, MockRequestLog
 
 
@@ -45,6 +47,33 @@ class ApiMockerTests(TestCase):
         self.assertContains(response, 'id="history-list"')
         self.assertContains(response, "Request history")
         self.assertContains(response, "Replay request")
+
+    def test_disabled_api_mocker_pages_and_management_apis_return_not_found(self):
+        PageVisibility.objects.update_or_create(
+            pk=1,
+            defaults={"api_mocker_enabled": False},
+        )
+
+        for url in [
+            reverse("api_mocker:dashboard"),
+            reverse("api_mocker:collections"),
+            reverse("api_mocker:mocks_collection"),
+            reverse("api_mocker:request_history"),
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_disabling_mocker_page_does_not_stop_public_mock_responses(self):
+        self.create_mock()
+        PageVisibility.objects.update_or_create(
+            pk=1,
+            defaults={"api_mocker_enabled": False},
+        )
+
+        response = self.client.get("/default/users/123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"name": "Ada"})
 
     def test_create_list_update_and_delete_mock(self):
         created = self.create_mock()
