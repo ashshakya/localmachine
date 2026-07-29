@@ -1,5 +1,6 @@
 Django>=5.2,<6.0
 aiohttp>=3.12,<4.0
+cryptography>=46,<50
 gunicorn>=23.0,<24.0
 Markdown>=3.7,<4.0
 PyMySQL>=1.1,<2.0

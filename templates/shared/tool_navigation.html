@@ -6,4 +6,5 @@
   {% if api_mocker_enabled %}
   <a href="{% url 'api_mocker:dashboard' %}"{% if active_tool == "api_mocker" %} class="active" aria-current="page"{% endif %}>API Mocker</a>
   {% endif %}
+  <a href="{% url 'tunnels:dashboard' %}"{% if active_tool == "tunnels" %} class="active" aria-current="page"{% endif %}>Tunnels</a>
 </nav>

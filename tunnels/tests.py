@@ -6,9 +6,10 @@ from unittest.mock import AsyncMock, patch
 
 from aiohttp import ClientSession, web
 from aiohttp.test_utils import TestServer
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import Client, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from .models import TunnelIdentity
@@ -100,13 +101,15 @@ class StandaloneAgentDownloadTests(SimpleTestCase):
 
 
 class TunnelIdentityTests(TestCase):
-    def test_token_is_hashed_and_can_be_verified(self):
+    def test_token_is_hashed_encrypted_and_can_be_revealed(self):
         identity = TunnelIdentity(username="gringotts")
         token = identity.issue_token()
         identity.save()
 
         self.assertNotEqual(identity.token_digest, token)
+        self.assertNotEqual(identity.token_ciphertext, token)
         self.assertTrue(identity.token_matches(token))
+        self.assertEqual(identity.reveal_token(), token)
         self.assertFalse(identity.token_matches("wrong-token"))
 
     def test_management_command_reserves_unique_username(self):
@@ -120,24 +123,36 @@ class TunnelIdentityTests(TestCase):
 
 
 class TunnelIdentityApiTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="alice",
+            password="A-secure-password-123!",
+        )
+        self.other_user = get_user_model().objects.create_user(
+            username="bob",
+            password="Another-secure-password-123!",
+        )
+        self.client.force_login(self.user)
+
     def endpoint(self, username="gringotts"):
         return reverse("tunnel_identity", kwargs={"username": username})
 
     def create_identity(self, username="gringotts", **headers):
         return self.client.put(self.endpoint(username), **headers)
 
-    def test_put_claims_username_and_returns_one_time_token(self):
+    def test_put_claims_owned_username_and_returns_recoverable_token(self):
         response = self.create_identity()
 
         self.assertEqual(response.status_code, 201)
-        payload = response.json()
-        self.assertTrue(payload["ok"])
+        payload = response.json()["tunnel"]
         self.assertEqual(payload["username"], "gringotts")
         self.assertEqual(payload["public_url"], "https://gringotts.localmachine.in")
         self.assertTrue(payload["token"])
         self.assertEqual(response["Cache-Control"], "no-store")
         identity = TunnelIdentity.objects.get(username="gringotts")
+        self.assertEqual(identity.owner, self.user)
         self.assertTrue(identity.token_matches(payload["token"]))
+        self.assertEqual(identity.reveal_token(), payload["token"])
         self.assertNotEqual(identity.token_digest, payload["token"])
 
     def test_trailing_slash_form_is_also_supported(self):
@@ -145,64 +160,174 @@ class TunnelIdentityApiTests(TestCase):
             reverse("tunnel_identity_slash", kwargs={"username": "localtest"})
         )
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json()["username"], "localtest")
+        self.assertEqual(response.json()["tunnel"]["username"], "localtest")
 
     def test_put_rejects_duplicate_and_reserved_username(self):
         self.assertEqual(self.create_identity().status_code, 201)
         self.assertEqual(self.create_identity().status_code, 409)
         self.assertEqual(self.create_identity("relay").status_code, 400)
 
-    @override_settings(TUNNEL_REGISTRATION_SECRET="registration-secret")
-    def test_put_can_require_registration_key(self):
-        self.assertEqual(self.create_identity().status_code, 403)
-        response = self.create_identity(
-            HTTP_X_TUNNEL_REGISTRATION_KEY="registration-secret"
-        )
-        self.assertEqual(response.status_code, 201)
-
     def test_post_rotates_token_and_invalidates_previous_token(self):
-        original_token = self.create_identity().json()["token"]
-        response = self.client.post(
-            self.endpoint(),
-            HTTP_AUTHORIZATION=f"Bearer {original_token}",
-        )
+        original_token = self.create_identity().json()["tunnel"]["token"]
+        response = self.client.post(self.endpoint())
 
         self.assertEqual(response.status_code, 200)
-        new_token = response.json()["token"]
+        new_token = response.json()["tunnel"]["token"]
         self.assertNotEqual(new_token, original_token)
         identity = TunnelIdentity.objects.get(username="gringotts")
         self.assertFalse(identity.token_matches(original_token))
         self.assertTrue(identity.token_matches(new_token))
-        rejected = self.client.delete(
-            self.endpoint(),
-            HTTP_AUTHORIZATION=f"Bearer {original_token}",
-        )
-        self.assertEqual(rejected.status_code, 401)
+        self.assertEqual(identity.reveal_token(), new_token)
 
-    def test_post_and_delete_require_current_bearer_token(self):
-        token = self.create_identity().json()["token"]
-        self.assertEqual(self.client.post(self.endpoint()).status_code, 401)
-        self.assertEqual(
-            self.client.delete(
-                self.endpoint(),
-                HTTP_AUTHORIZATION="Bearer wrong-token",
-            ).status_code,
-            401,
-        )
-
-        response = self.client.delete(
-            self.endpoint(),
-            HTTP_AUTHORIZATION=f"Bearer {token}",
-        )
+    def test_delete_removes_owned_tunnel(self):
+        self.create_identity()
+        response = self.client.delete(self.endpoint())
         self.assertEqual(response.status_code, 204)
         self.assertFalse(TunnelIdentity.objects.filter(username="gringotts").exists())
 
     def test_mutation_of_unknown_username_returns_not_found(self):
-        response = self.client.post(
-            self.endpoint(),
-            HTTP_AUTHORIZATION="Bearer any-token",
-        )
+        response = self.client.post(self.endpoint())
         self.assertEqual(response.status_code, 404)
+
+    def test_get_and_collection_return_only_current_users_tunnels(self):
+        self.create_identity("alice-service")
+        other = TunnelIdentity(owner=self.other_user, username="bob-service")
+        other.issue_token()
+        other.save()
+
+        detail = self.client.get(self.endpoint("alice-service"))
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(
+            detail.json()["tunnel"]["username"],
+            "alice-service",
+        )
+        collection = self.client.get(reverse("tunnel_collection"))
+        self.assertEqual(collection.status_code, 200)
+        self.assertEqual(
+            [item["username"] for item in collection.json()["tunnels"]],
+            ["alice-service"],
+        )
+        self.assertEqual(self.client.get(self.endpoint("bob-service")).status_code, 404)
+        self.assertEqual(self.client.post(self.endpoint("bob-service")).status_code, 404)
+        self.assertEqual(self.client.delete(self.endpoint("bob-service")).status_code, 404)
+
+    def test_anonymous_api_requests_are_rejected(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("tunnel_collection")).status_code, 401)
+        self.assertEqual(self.create_identity().status_code, 401)
+
+    def test_mutating_api_requires_csrf_token(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.user)
+
+        response = csrf_client.put(self.endpoint())
+
+        self.assertEqual(response.status_code, 403)
+
+
+class TunnelAccountDashboardTests(TestCase):
+    def test_registration_creates_email_account_and_signs_in(self):
+        response = self.client.post(
+            reverse("tunnels:register"),
+            {
+                "email": "NewDeveloper@Example.COM",
+                "password1": "A-strong-password-123!",
+                "password2": "A-strong-password-123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("tunnels:dashboard"))
+        user = get_user_model().objects.get(
+            username="newdeveloper@example.com"
+        )
+        self.assertEqual(user.email, "newdeveloper@example.com")
+        dashboard = self.client.get(reverse("tunnels:dashboard"))
+        self.assertContains(dashboard, "newdeveloper@example.com")
+
+    def test_registration_rejects_duplicate_email_case_insensitively(self):
+        get_user_model().objects.create_user(
+            username="developer@example.com",
+            email="developer@example.com",
+            password="A-secure-password-123!",
+        )
+
+        response = self.client.post(
+            reverse("tunnels:register"),
+            {
+                "email": "Developer@Example.com",
+                "password1": "A-strong-password-123!",
+                "password2": "A-strong-password-123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "An account with this email already exists.")
+        self.assertEqual(get_user_model().objects.count(), 1)
+
+    def test_sign_in_uses_email_address(self):
+        get_user_model().objects.create_user(
+            username="legacy-developer",
+            email="developer@example.com",
+            password="A-secure-password-123!",
+        )
+
+        response = self.client.post(
+            reverse("tunnels:login"),
+            {
+                "username": "Developer@Example.COM",
+                "password": "A-secure-password-123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("tunnels:dashboard"))
+
+    def test_dashboard_requires_login(self):
+        response = self.client.get(reverse("tunnels:dashboard"))
+        self.assertRedirects(
+            response,
+            f"{reverse('tunnels:login')}?next={reverse('tunnels:dashboard')}",
+        )
+
+    def test_dashboard_shows_only_owned_token_and_copyable_command(self):
+        user = get_user_model().objects.create_user(
+            username="alice",
+            password="A-secure-password-123!",
+        )
+        other = get_user_model().objects.create_user(
+            username="bob",
+            password="Another-secure-password-123!",
+        )
+        owned = TunnelIdentity(owner=user, username="alice-service")
+        token = owned.issue_token()
+        owned.save()
+        hidden = TunnelIdentity(owner=other, username="bob-service")
+        hidden.issue_token()
+        hidden.save()
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("tunnels:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Cache-Control"], "no-store")
+        self.assertContains(response, "alice-service.localmachine.in")
+        self.assertContains(response, token)
+        self.assertContains(response, "curl -fsSL http://testserver/tunnel")
+        self.assertNotContains(response, "/tunnel/tunnel")
+        self.assertContains(response, "python3 - alice-service 5000")
+        self.assertContains(response, "5000 is your local project's running port")
+        self.assertNotContains(response, "bob-service")
+
+    def test_logout_requires_post(self):
+        user = get_user_model().objects.create_user(
+            username="alice",
+            password="A-secure-password-123!",
+        )
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(reverse("tunnels:logout")).status_code, 405)
+        self.assertRedirects(
+            self.client.post(reverse("tunnels:logout")),
+            reverse("tunnels:login"),
+        )
 
 
 @override_settings(

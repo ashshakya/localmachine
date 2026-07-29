@@ -1,0 +1,150 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <title>My Tunnels · Localmachine</title>
+  <link rel="stylesheet" href="{% static 'shared/global_header.css' %}">
+  <link rel="stylesheet" href="{% static 'tunnels/portal.css' %}">
+</head>
+<body class="portal-page">
+  {% firstof request.user.email request.user.username as account_label %}
+  <header class="portal-header">
+    <a class="portal-brand" href="{% url 'tunnels:dashboard' %}">
+      <span>LM</span>
+      <strong>localmachine<em>.in</em></strong>
+    </a>
+    {% include "shared/tool_navigation.html" with active_tool="tunnels" %}
+    <div class="account-menu">
+      <span class="account-avatar">{{ account_label|slice:":2"|upper }}</span>
+      <span><strong>{{ account_label }}</strong><small>Developer account</small></span>
+      <form method="post" action="{% url 'tunnels:logout' %}">
+        {% csrf_token %}
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="portal-main">
+    <section class="portal-hero">
+      <div>
+        <p class="eyebrow">Your private ingress</p>
+        <h1>Local services,<br><em>reachable anywhere.</em></h1>
+        <p>Reserve a stable subdomain, run one command, and send HTTPS traffic to a port on your machine.</p>
+      </div>
+      <form id="createTunnelForm" class="create-tunnel-card">
+        <label for="tunnelUsername">Create a tunnel</label>
+        <div class="subdomain-input">
+          <input id="tunnelUsername" name="username" required maxlength="63" pattern="[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?" placeholder="tunnel-name" autocomplete="off" spellcheck="false">
+          <span>.{{ tunnel_domain }}</span>
+        </div>
+        <button type="submit">Create Tunnel <span>→</span></button>
+        <small>Lowercase letters, numbers, and hyphens. Names are globally unique.</small>
+      </form>
+    </section>
+
+    <section class="tunnel-section">
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">Reserved endpoints</p>
+          <h2>Your tunnels</h2>
+        </div>
+        <span class="tunnel-count">{{ tunnels|length }} tunnel{{ tunnels|length|pluralize }}</span>
+      </header>
+
+      <div class="tunnel-grid">
+        {% for tunnel in tunnels %}
+        <article class="tunnel-card" data-username="{{ tunnel.username }}">
+          <header>
+            <span class="status-dot"></span>
+            <div>
+              <h3>{{ tunnel.username }}</h3>
+              <a href="{{ tunnel.public_url }}" target="_blank" rel="noreferrer">{{ tunnel.public_url }} ↗</a>
+            </div>
+            <span class="reserved-label">Reserved</span>
+          </header>
+
+          <div class="credential">
+            <div class="field-label"><span>Agent token</span><small>Keep this private</small></div>
+            {% if tunnel.token_available %}
+            <div class="secret-field">
+              <input id="token-{{ tunnel.username }}" type="password" readonly value="{{ tunnel.token }}" aria-label="{{ tunnel.username }} token">
+              <button class="reveal-button" type="button" data-reveal="token-{{ tunnel.username }}">Show</button>
+              <button class="copy-button" type="button" data-copy="token-{{ tunnel.username }}">Copy</button>
+            </div>
+            {% else %}
+            <div class="legacy-token">Token unavailable. Rotate once to generate an encrypted, copyable token.</div>
+            {% endif %}
+          </div>
+
+          <div class="command-block">
+            <div class="field-label"><span>Start tunnel</span><small>Port 5000</small></div>
+            <p class="port-note">5000 is your local project's running port—replace it if your project uses a different port.</p>
+            {% if tunnel.token_available %}
+            <pre id="command-{{ tunnel.username }}">curl -fsSL {{ tunnel.agent_url }} | TUNNEL_TOKEN='{{ tunnel.token }}' python3 - {{ tunnel.username }} 5000</pre>
+            <button class="command-copy" type="button" data-copy="command-{{ tunnel.username }}">Copy command</button>
+            {% else %}
+            <pre>Rotate the token to generate your start command.</pre>
+            {% endif %}
+          </div>
+
+          <footer>
+            <small>Created {{ tunnel.created_at|date:"M j, Y" }}</small>
+            <div>
+              <button class="rotate-button" type="button">↻ Rotate token</button>
+              <button class="delete-button" type="button">Delete</button>
+            </div>
+          </footer>
+        </article>
+        {% empty %}
+        <div class="empty-tunnels">
+          <span>↗</span>
+          <h3>No tunnels yet</h3>
+          <p>Choose a subdomain above to create your first public endpoint.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="guide-section">
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">Quick start</p>
+          <h2>From localhost to HTTPS in three steps</h2>
+        </div>
+      </header>
+      <div class="guide-grid">
+        <article>
+          <span>01</span>
+          <h3>Run your app</h3>
+          <p>Start any HTTP service on your machine.</p>
+          <code>python -m http.server 5000</code>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Start the agent</h3>
+          <p>Copy the generated command from your tunnel card and run it in another terminal.</p>
+          <code>python - tunnel-name 5000</code>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Share the URL</h3>
+          <p>Requests to your HTTPS subdomain now reach localhost.</p>
+          <code>https://tunnel-name.{{ tunnel_domain }}</code>
+        </article>
+      </div>
+      <aside class="security-note">
+        <strong>Security note</strong>
+        <p>Anyone with the public URL can reach the service while your agent is connected. Protect sensitive applications with their own authentication and stop the agent when sharing is finished.</p>
+      </aside>
+    </section>
+  </main>
+
+  <div class="portal-toast" id="portalToast" role="status" hidden></div>
+  <script src="{% static 'tunnels/portal.js' %}"></script>
+</body>
+</html>

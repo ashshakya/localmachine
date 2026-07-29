@@ -2,14 +2,24 @@ import hashlib
 import secrets
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db import models
 
 from .names import normalize_tunnel_name
+from .tokens import decrypt_token, encrypt_token
 
 
 class TunnelIdentity(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="tunnel_identities",
+    )
     username = models.CharField(max_length=63, unique=True)
     token_digest = models.CharField(max_length=64, editable=False)
+    token_ciphertext = models.TextField(blank=True, editable=False)
     enabled = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -32,7 +42,12 @@ class TunnelIdentity(models.Model):
     def issue_token(self):
         token = secrets.token_urlsafe(32)
         self.token_digest = self.digest_token(token)
+        self.token_ciphertext = encrypt_token(token)
         return token
+
+    def reveal_token(self):
+        token = decrypt_token(self.token_ciphertext)
+        return token if token and self.token_matches(token) else ""
 
     def token_matches(self, token):
         if not self.enabled or not token:

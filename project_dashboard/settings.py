@@ -86,7 +86,31 @@ else:
     raise ImproperlyConfigured(
         "DASHBOARD_DATABASE_ENGINE must be either 'mysql' or 'sqlite'."
     )
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        )
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"
+    },
+]
+LOGIN_URL = "/tunnels/login/"
+LOGIN_REDIRECT_URL = "/tunnels/"
+LOGOUT_REDIRECT_URL = "/tunnels/login/"
+AUTHENTICATION_BACKENDS = [
+    "tunnels.auth.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.environ.get("DASHBOARD_TIME_ZONE", "Asia/Kolkata")
 USE_I18N = True
@@ -177,7 +201,10 @@ TUNNEL_RELAY_HOST = os.environ.get("TUNNEL_RELAY_HOST", "0.0.0.0").strip()
 TUNNEL_RELAY_PORT = int(os.environ.get("TUNNEL_RELAY_PORT", "9000"))
 TUNNEL_REQUEST_TIMEOUT = float(os.environ.get("TUNNEL_REQUEST_TIMEOUT", "30"))
 TUNNEL_MAX_BODY_BYTES = int(os.environ.get("TUNNEL_MAX_BODY_BYTES", str(5 * 1024 * 1024)))
-TUNNEL_REGISTRATION_SECRET = os.environ.get("TUNNEL_REGISTRATION_SECRET", "").strip()
+TUNNEL_TOKEN_ENCRYPTION_KEY = os.environ.get(
+    "TUNNEL_TOKEN_ENCRYPTION_KEY",
+    SECRET_KEY,
+)
 
 if os.environ.get("DASHBOARD_TRUST_PROXY_HEADERS", "0") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

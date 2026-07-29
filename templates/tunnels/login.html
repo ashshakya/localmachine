@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <title>Sign in · Localmachine Tunnels</title>
+  <link rel="stylesheet" href="{% static 'tunnels/portal.css' %}">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <a class="auth-brand" href="{% url 'document_viewer:home' %}">
+      <span>LM</span>
+      <strong>localmachine<em>.in</em></strong>
+    </a>
+    <section class="auth-card">
+      <p class="eyebrow">Developer tunnels</p>
+      <h1>Welcome back.</h1>
+      <p class="auth-intro">Sign in to manage your reserved subdomains and tunnel tokens.</p>
+      {% if form.non_field_errors %}
+      <div class="form-alert">{{ form.non_field_errors|striptags }}</div>
+      {% endif %}
+      <form method="post" class="auth-form">
+        {% csrf_token %}
+        <label for="{{ form.username.id_for_label }}">Email address</label>
+        {{ form.username }}
+        {% if form.username.errors %}<small class="field-error">{{ form.username.errors|striptags }}</small>{% endif %}
+        <label for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<small class="field-error">{{ form.password.errors|striptags }}</small>{% endif %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit">Sign in <span>→</span></button>
+      </form>
+      <p class="auth-switch">New here? <a href="{% url 'tunnels:register' %}">Create an account</a></p>
+    </section>
+    <p class="auth-foot">Secure ingress for services running on your machine.</p>
+  </main>
+</body>
+</html>

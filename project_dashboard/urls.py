@@ -8,6 +8,12 @@ from tunnels import views as tunnel_views
 urlpatterns = [
     path("tunnel", tunnel_views.standalone_agent, name="tunnel_agent"),
     path("tunnel.py", tunnel_views.standalone_agent, name="tunnel_agent_script"),
+    path("tunnels/", include("tunnels.urls")),
+    path(
+        "api/tunnels",
+        tunnel_views.tunnel_collection,
+        name="tunnel_collection",
+    ),
     path(
         "api/tunnels/<str:username>",
         tunnel_views.tunnel_identity,

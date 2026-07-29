@@ -192,62 +192,40 @@ after replacing certificate paths if necessary. The apex domain is proxied to
 Django on port 8000; wildcard subdomains are proxied to the tunnel relay on
 localhost port 9000.
 
-### Reserve a developer name
+### Developer accounts and tunnel management
 
-Developers can claim an available username through the public API:
+Open `https://localmachine.in/tunnels/register/` to create an account with an
+email address, then use the tunnel dashboard at
+`https://localmachine.in/tunnels/`. A signed-in
+developer can reserve a username, reveal and copy its token, rotate the token,
+delete the tunnel, and copy a ready-to-run agent command. Each account can only
+read or change its own tunnels. Email addresses are normalized to lowercase and
+used for subsequent sign-in.
 
-```bash
-curl -X PUT https://localmachine.in/api/tunnels/gringotts
+The same operations are available to authenticated browser sessions:
+
+```text
+GET     /api/tunnels                 list the signed-in user's tunnels
+PUT     /api/tunnels/<username>      create a tunnel
+GET     /api/tunnels/<username>      fetch a tunnel
+POST    /api/tunnels/<username>      rotate its token
+DELETE  /api/tunnels/<username>      delete it
 ```
 
-The successful `201 Created` response contains the token exactly once:
+These endpoints use the Django login session and CSRF protection. The dashboard
+is the recommended API client because it supplies the session and CSRF token
+automatically. A duplicate username returns `409 Conflict`; a tunnel belonging
+to another user is treated as not found.
 
-```json
-{
-  "ok": true,
-  "username": "gringotts",
-  "token": "<ONE_TIME_TOKEN>",
-  "public_url": "https://gringotts.localmachine.in"
-}
-```
+Tokens are encrypted at rest so their owner can retrieve them from the
+dashboard. Set a stable, private `TUNNEL_TOKEN_ENCRYPTION_KEY` in production
+before creating tunnels. Changing that key makes existing stored tokens
+unreadable; rotate affected tunnel tokens to recover.
 
-Store the token like a password. A duplicate username returns `409 Conflict`.
-Reserved or invalid names return `400 Bad Request`.
-
-Rotate the token by authenticating with the current token:
-
-```bash
-curl -X POST \
-  -H "Authorization: Bearer <CURRENT_TOKEN>" \
-  https://localmachine.in/api/tunnels/gringotts
-```
-
-The response contains a fresh token and immediately invalidates the old token.
-Any agent still using the old token is disconnected on the next request. Delete
-the username with:
-
-```bash
-curl -X DELETE \
-  -H "Authorization: Bearer <CURRENT_TOKEN>" \
-  https://localmachine.in/api/tunnels/gringotts
-```
-
-Deletion invalidates the token and disconnects an active tunnel on its next
-request.
-
-`PUT` registration is public by default. For a private beta, set
-`TUNNEL_REGISTRATION_SECRET` on the server and give approved developers the
-registration key. They then claim a name using:
-
-```bash
-curl -X PUT \
-  -H "X-Tunnel-Registration-Key: <REGISTRATION_KEY>" \
-  https://localmachine.in/api/tunnels/gringotts
-```
-
-Operators can still create or rotate identities using
-`python manage.py create_tunnel_identity gringotts [--rotate]`, and identities
-can be disabled from Django admin.
+Operators can still create or rotate legacy identities using
+`python manage.py create_tunnel_identity gringotts [--rotate]`. Assign an owner
+in Django admin and rotate its token before the developer uses it in the
+dashboard.
 
 ### Run the relay and developer agent
 
@@ -259,14 +237,9 @@ development:
 .venv/bin/python -m tunnels.relay
 ```
 
-Keep the relay running on port 9000. In another terminal, claim a username
-against the local Django server:
-
-```bash
-curl -X PUT http://127.0.0.1:8000/api/tunnels/gringotts
-```
-
-Then start the downloaded agent with the local-relay shortcut:
+Keep the relay running on port 9000. Register at
+`http://127.0.0.1:8000/tunnels/register/`, reserve a username in the dashboard,
+and copy its command. To use the local-relay shortcut manually:
 
 ```bash
 curl -fsSL http://127.0.0.1:8000/tunnel \
@@ -319,7 +292,7 @@ python3 localmachine-tunnel.py gringotts 8000
 Tokens can also come from the environment, which is useful in CI:
 
 ```bash
-TUNNEL_TOKEN='<ONE_TIME_TOKEN>' \
+TUNNEL_TOKEN='<TUNNEL_TOKEN>' \
   python3 localmachine-tunnel.py gringotts 8000
 ```
 
@@ -355,7 +328,7 @@ docker logs -f localmachine-tunnel-relay
 Tokens, headers, bodies, and query-string values are intentionally excluded from
 these logs. Use the request ID to correlate the developer and relay entries.
 
-This first version supports concurrent HTTP requests with request and response
-bodies up to 5 MB. Public WebSocket forwarding, streaming bodies, multi-instance
-relay coordination, account-based registration, and rate limiting are
-deliberately left for later production-hardening phases.
+This version supports developer accounts and concurrent HTTP requests with
+request and response bodies up to 5 MB. Public WebSocket forwarding, streaming
+bodies, multi-instance relay coordination, SSO, and rate limiting are left for
+later production-hardening phases.

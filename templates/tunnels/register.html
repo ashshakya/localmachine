@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <title>Register · Localmachine Tunnels</title>
+  <link rel="stylesheet" href="{% static 'tunnels/portal.css' %}">
+</head>
+<body class="auth-page">
+  <main class="auth-shell">
+    <a class="auth-brand" href="{% url 'document_viewer:home' %}">
+      <span>LM</span>
+      <strong>localmachine<em>.in</em></strong>
+    </a>
+    <section class="auth-card">
+      <p class="eyebrow">Developer tunnels</p>
+      <h1>Create your account.</h1>
+      <p class="auth-intro">Reserve subdomains that belong only to you.</p>
+      <form method="post" class="auth-form">
+        {% csrf_token %}
+        <label for="{{ form.email.id_for_label }}">Email address</label>
+        {{ form.email }}
+        {% if form.email.errors %}<small class="field-error">{{ form.email.errors|striptags }}</small>{% endif %}
+        <label for="{{ form.password1.id_for_label }}">Password</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}<small class="field-error">{{ form.password1.errors|striptags }}</small>{% endif %}
+        <label for="{{ form.password2.id_for_label }}">Confirm password</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}<small class="field-error">{{ form.password2.errors|striptags }}</small>{% endif %}
+        <p class="password-note">Use at least 10 characters and avoid common passwords.</p>
+        <button type="submit">Create account <span>→</span></button>
+      </form>
+      <p class="auth-switch">Already registered? <a href="{% url 'tunnels:login' %}">Sign in</a></p>
+    </section>
+    <p class="auth-foot">Your tunnel tokens are encrypted before storage.</p>
+  </main>
+</body>
+</html>
