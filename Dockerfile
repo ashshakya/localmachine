@@ -38,7 +38,7 @@ RUN chmod +x /app/docker-entrypoint.sh \
 
 USER dashboard
 
-EXPOSE 8000
+EXPOSE 8000 9000
 VOLUME ["/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

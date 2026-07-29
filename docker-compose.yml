@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
 
     env_file:
-      - /home/deploy/.env
+      - ${DASHBOARD_ENV_FILE:-/home/deploy/.env}
 
     environment:
       # Django must see the browser's public HTTPS origin when nginx proxies
@@ -17,3 +17,46 @@ services:
 
     ports:
       - "8000:8000"
+
+    volumes:
+      - dashboard-data:/data
+
+  tunnel-relay:
+    image: ghcr.io/ashshakya/localmachine:${TAG}
+    container_name: localmachine-tunnel-relay
+
+    restart: unless-stopped
+
+    env_file:
+      - ${DASHBOARD_ENV_FILE:-/home/deploy/.env}
+
+    environment:
+      RUN_MIGRATIONS: "0"
+      TUNNEL_DOMAIN: ${TUNNEL_DOMAIN:-localmachine.in}
+      TUNNEL_RELAY_HOST: 0.0.0.0
+      TUNNEL_RELAY_PORT: 9000
+
+    command: ["python", "-m", "tunnels.relay"]
+
+    ports:
+      - "127.0.0.1:9000:9000"
+
+    volumes:
+      - dashboard-data:/data
+
+    depends_on:
+      - app
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9000/_tunnel/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  dashboard-data:

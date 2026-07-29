@@ -10,6 +10,7 @@ const elements = {
   dropZone: document.querySelector("#dropZone"),
   editor: document.querySelector("#editor"),
   preview: document.querySelector("#preview"),
+  topbarActions: document.querySelector("#topbarActions"),
   saveButton: document.querySelector("#saveButton"),
   saveState: document.querySelector("#saveState"),
   autosave: document.querySelector("#autosave"),
@@ -113,6 +114,7 @@ async function openDocument(path = elements.filePath.value) {
     elements.fileType.textContent = data.kind === "markdown" ? "MD" : "HTML";
     elements.saveButton.firstChild.textContent = "Save ";
     elements.autosave.disabled = false;
+    elements.topbarActions.hidden = false;
     elements.welcome.hidden = true;
     elements.workspace.hidden = false;
     elements.externalChange.hidden = true;
@@ -153,6 +155,7 @@ async function openUpload(file) {
     elements.saveButton.firstChild.textContent = "Download ";
     elements.autosave.checked = false;
     elements.autosave.disabled = true;
+    elements.topbarActions.hidden = false;
     elements.welcome.hidden = true;
     elements.workspace.hidden = false;
     elements.externalChange.hidden = true;
@@ -185,6 +188,7 @@ async function openPasteEditor() {
   elements.saveButton.firstChild.textContent = "Download ";
   elements.autosave.checked = false;
   elements.autosave.disabled = true;
+  elements.topbarActions.hidden = false;
   elements.welcome.hidden = true;
   elements.workspace.hidden = false;
   elements.externalChange.hidden = true;
@@ -275,6 +279,7 @@ document.querySelector("#changeFile").addEventListener("click", () => {
   if (state.dirty && !confirm("Discard your unsaved changes and open another file?")) return;
   clearInterval(state.pollTimer);
   elements.autosave.disabled = false;
+  elements.topbarActions.hidden = true;
   elements.workspace.hidden = true;
   elements.welcome.hidden = false;
   elements.filePath.focus();

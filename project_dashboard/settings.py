@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "api_mocker",
     "document_viewer",
+    "tunnels",
     "workspace",
 ]
 MIDDLEWARE = [
@@ -170,6 +171,13 @@ SERVICE_ENDPOINTS = os.environ.get(
     "DASHBOARD_SERVICE_ENDPOINTS",
     "Dashboard|http://127.0.0.1:8001/health/,Gringotts API|http://127.0.0.1:8000,Local App|http://127.0.0.1:3000,Admin Console|http://127.0.0.1:8080",
 )
+
+TUNNEL_DOMAIN = os.environ.get("TUNNEL_DOMAIN", "localmachine.in").strip().lower().strip(".")
+TUNNEL_RELAY_HOST = os.environ.get("TUNNEL_RELAY_HOST", "0.0.0.0").strip()
+TUNNEL_RELAY_PORT = int(os.environ.get("TUNNEL_RELAY_PORT", "9000"))
+TUNNEL_REQUEST_TIMEOUT = float(os.environ.get("TUNNEL_REQUEST_TIMEOUT", "30"))
+TUNNEL_MAX_BODY_BYTES = int(os.environ.get("TUNNEL_MAX_BODY_BYTES", str(5 * 1024 * 1024)))
+TUNNEL_REGISTRATION_SECRET = os.environ.get("TUNNEL_REGISTRATION_SECRET", "").strip()
 
 if os.environ.get("DASHBOARD_TRUST_PROXY_HEADERS", "0") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

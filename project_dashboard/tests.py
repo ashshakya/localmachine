@@ -42,3 +42,7 @@ class SearchDiscoveryTests(TestCase):
             '<meta name="google-site-verification" content="verification-token">',
             html=True,
         )
+        self.assertContains(
+            response,
+            '<div id="topbarActions" class="topbar-actions" hidden>',
+        )

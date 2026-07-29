@@ -3,8 +3,21 @@ from django.urls import include, path
 
 from api_mocker.urls import dashboard_urlpatterns, public_mock_urlpatterns
 from project_dashboard import seo
+from tunnels import views as tunnel_views
 
 urlpatterns = [
+    path("tunnel", tunnel_views.standalone_agent, name="tunnel_agent"),
+    path("tunnel.py", tunnel_views.standalone_agent, name="tunnel_agent_script"),
+    path(
+        "api/tunnels/<str:username>",
+        tunnel_views.tunnel_identity,
+        name="tunnel_identity",
+    ),
+    path(
+        "api/tunnels/<str:username>/",
+        tunnel_views.tunnel_identity,
+        name="tunnel_identity_slash",
+    ),
     path("robots.txt", seo.robots_txt, name="robots_txt"),
     path("sitemap.xml", seo.sitemap_xml, name="sitemap_xml"),
     path("admin/", admin.site.urls),
